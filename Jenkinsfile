@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = credentials('4e02ff17-2dd3-4f42-bc24-9ee574aad262') // Your kubeconfig secret
+        KUBECONFIG = credentials('4e02ff17-2dd3-4f42-bc24-9ee574aad262')  // Kubeconfig stored in Jenkins credentials
     }
 
     stages {
@@ -15,14 +15,48 @@ pipeline {
         }
 
         stage('Apply Chaos Workflow') {
+            agent {
+                kubernetes {
+                    yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+"""
+                }
+            }
             steps {
-                sh 'kubectl apply -f workflows/kill-card-pod.yml'
+                container('kubectl') {
+                    sh 'kubectl apply -f workflows/kill-card-pod.yml'
+                }
             }
         }
 
         stage('Verify Workflow') {
+            agent {
+                kubernetes {
+                    yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+"""
+                }
+            }
             steps {
-                sh 'kubectl get chaosengine -n litmus'
+                container('kubectl') {
+                    sh 'kubectl get chaosengine -n litmus'
+                }
             }
         }
     }
