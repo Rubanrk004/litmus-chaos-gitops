@@ -16,15 +16,18 @@ pipeline {
             }
         }
 
-        stage('Install kubectl') {
-            steps {
-                sh '''
-                echo "Downloading kubectl..."
-                curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                chmod +x kubectl
-                '''
-            }
-        }
+stage('Install kubectl') {
+    steps {
+        sh '''
+            echo "Downloading kubectl..."
+            KUBE_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
+            curl -LO "https://dl.k8s.io/release/${KUBE_VERSION}/bin/linux/amd64/kubectl"
+            chmod +x kubectl
+            mv kubectl /usr/local/bin/
+            kubectl version --client
+        '''
+    }
+}
 
         stage('Apply Chaos Experiment') {
             steps {
