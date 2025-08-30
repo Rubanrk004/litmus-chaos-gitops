@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        NAMESPACE = "litmus"                 // Litmus namespace
-        EXPERIMENT = "workflows/kill-card-pod.yml" // Correct file path
+        NAMESPACE = "litmus"                  // Litmus namespace
+        EXPERIMENT = "workflows/kill-card-pod.yml" // Path inside your Git repo
+        KUBECTL = "$HOME/bin/kubectl"         // Absolute path to kubectl
     }
 
     stages {
@@ -20,12 +21,14 @@ pipeline {
                     echo "Downloading kubectl..."
                     KUBE_VERSION=$(curl -Ls https://dl.k8s.io/release/stable.txt)
                     echo "Latest kubectl version: $KUBE_VERSION"
+
                     curl -LO "https://dl.k8s.io/${KUBE_VERSION}/bin/linux/amd64/kubectl"
                     chmod +x kubectl
                     mkdir -p $HOME/bin
                     mv kubectl $HOME/bin/
-                    export PATH=$HOME/bin:$PATH
-                    kubectl version --client
+                    
+                    echo "Verifying kubectl..."
+                    $HOME/bin/kubectl version --client
                 '''
             }
         }
@@ -33,8 +36,8 @@ pipeline {
         stage('Apply Chaos Experiment') {
             steps {
                 sh '''
-                echo "Applying chaos experiment..."
-                kubectl apply -f ${EXPERIMENT} -n ${NAMESPACE}
+                    echo "Applying chaos experiment..."
+                    $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${NAMESPACE}
                 '''
             }
         }
@@ -43,7 +46,7 @@ pipeline {
             steps {
                 script {
                     def result = sh(
-                        script: "kubectl get chaosresult -n ${NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
+                        script: "$HOME/bin/kubectl get chaosresult -n ${NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
                         returnStdout: true
                     ).trim()
 
