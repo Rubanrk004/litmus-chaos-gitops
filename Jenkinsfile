@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        NAMESPACE = "litmus"                  // Litmus namespace
-        EXPERIMENT = "workflows/kill-card-pod.yml" // Path inside your Git repo
-        KUBECTL = "$HOME/bin/kubectl"         // Absolute path to kubectl
+        NAMESPACE = "litmus"                        // Namespace where Litmus is installed
+        EXPERIMENT = "workflows/kill-card-pod.yml"  // Path to chaos workflow in repo
+        KUBECTL = "$HOME/bin/kubectl"               // Absolute kubectl path
+        KUBECONFIG = "/root/.kube/config"           // Adjust if different in Jenkins agent
     }
 
     stages {
@@ -26,7 +27,7 @@ pipeline {
                     chmod +x kubectl
                     mkdir -p $HOME/bin
                     mv kubectl $HOME/bin/
-                    
+
                     echo "Verifying kubectl..."
                     $HOME/bin/kubectl version --client
                 '''
