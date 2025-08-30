@@ -1,28 +1,67 @@
 pipeline {
-    agent {
-        docker {
-            image 'lachlanevenson/k8s-kubectl:v1.28.0'
-        }
-    }
+    agent any
+
     environment {
-        KUBECONFIG = credentials('4e02ff17-2dd3-4f42-bc24-9ee574aad262')
+        KUBECTL = "./kubectl"   // Use local binary
+        NAMESPACE = "litmus"    // Namespace where litmus is installed
+        EXPERIMENT = "kill-card-pod.yaml" // Your chaos experiment yaml file
     }
+
     stages {
-        stage('Checkout') {
+
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Rubanrk004/litmus-chaos-gitops.git', credentialsId: 'github-creds'
+                // Replace with your GitHub repo
+                git branch: 'main', url: 'https://github.com/Rubanrk004/litmus-chaos-gitops.git'
             }
         }
-        stage('Apply Chaos Workflow') {
+
+        stage('Install kubectl') {
             steps {
-                sh 'kubectl apply -f workflows/kill-card-pod.yml -n litmus'
+                sh '''
+                echo "Downloading kubectl..."
+                curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                chmod +x kubectl
+                '''
             }
         }
-        stage('Verify Workflow') {
+
+        stage('Apply Chaos Experiment') {
             steps {
-                sh 'kubectl get chaosengine -n litmus'
-                sh 'kubectl get chaosresult -n litmus'
+                sh '''
+                echo "Applying chaos experiment..."
+                ${KUBECTL} apply -f ${EXPERIMENT} -n ${NAMESPACE}
+                '''
             }
+        }
+
+        stage('Verify Chaos Result') {
+            steps {
+                script {
+                    def result = sh(
+                        script: "${KUBECTL} get chaosresult -n ${NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Chaos Experiment Verdict: ${result}"
+
+                    if (result != "Pass") {
+                        error("Chaos Experiment Failed with Verdict: ${result}")
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline completed."
+        }
+        success {
+            echo "✅ Chaos Experiment PASSED"
+        }
+        failure {
+            echo "❌ Chaos Experiment FAILED"
         }
     }
 }
