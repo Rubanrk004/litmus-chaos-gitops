@@ -2,10 +2,18 @@ pipeline {
     agent any
 
     environment {
-        NAMESPACE = "litmus"                        // Namespace where Litmus is installed
-        EXPERIMENT = "workflows/kill-card-pod.yml"  // Path to chaos workflow in repo
-        KUBECTL = "$HOME/bin/kubectl"               // Absolute kubectl path
-        KUBECONFIG = "/root/.kube/config"           // Adjust if different in Jenkins agent
+        # Namespace where Litmus is installed
+        LITMUS_NAMESPACE = "litmus"
+
+        # Namespace where your application is deployed
+        APP_NAMESPACE = "microservices"
+
+        # Path to the chaos experiment YAML inside repo
+        # 🔹 Update this after running the Debug Repo Structure stage
+        EXPERIMENT = "workflows/kill-card-pod.yml"
+
+        KUBECTL = "$HOME/bin/kubectl"
+        KUBECONFIG = "/root/.kube/config"   // Adjust if your Jenkins agent has a different kubeconfig path
     }
 
     stages {
@@ -16,10 +24,19 @@ pipeline {
             }
         }
 
+        stage('Debug Repo Structure') {
+            steps {
+                sh '''
+                    echo "📂 Checking repo file structure..."
+                    ls -R
+                '''
+            }
+        }
+
         stage('Install kubectl') {
             steps {
                 sh '''
-                    echo "Downloading kubectl..."
+                    echo "⬇️ Downloading kubectl..."
                     KUBE_VERSION=$(curl -Ls https://dl.k8s.io/release/stable.txt)
                     echo "Latest kubectl version: $KUBE_VERSION"
 
@@ -28,7 +45,7 @@ pipeline {
                     mkdir -p $HOME/bin
                     mv kubectl $HOME/bin/
 
-                    echo "Verifying kubectl..."
+                    echo "✅ Verifying kubectl..."
                     $HOME/bin/kubectl version --client
                 '''
             }
@@ -37,8 +54,8 @@ pipeline {
         stage('Apply Chaos Experiment') {
             steps {
                 sh '''
-                    echo "Applying chaos experiment..."
-                    $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${NAMESPACE}
+                    echo "⚡ Applying chaos experiment..."
+                    $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
                 '''
             }
         }
@@ -46,15 +63,18 @@ pipeline {
         stage('Verify Chaos Result') {
             steps {
                 script {
+                    echo "⏳ Waiting for chaos result..."
+                    sleep(time: 30, unit: "SECONDS")
+
                     def result = sh(
-                        script: "$HOME/bin/kubectl get chaosresult -n ${NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
+                        script: "$HOME/bin/kubectl get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
                         returnStdout: true
                     ).trim()
 
-                    echo "Chaos Experiment Verdict: ${result}"
+                    echo "📝 Chaos Experiment Verdict: ${result}"
 
                     if (result != "Pass") {
-                        error("Chaos Experiment Failed with Verdict: ${result}")
+                        error("❌ Chaos Experiment Failed with Verdict: ${result}")
                     }
                 }
             }
@@ -63,7 +83,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline completed."
+            echo "📌 Pipeline completed."
         }
         success {
             echo "✅ Chaos Experiment PASSED"
