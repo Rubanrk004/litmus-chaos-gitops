@@ -9,15 +9,12 @@ pipeline {
         APP_NAMESPACE = "microservices"
 
         // Path to the chaos experiment YAML inside repo
-        //🔹 Update this after running the Debug Repo Structure stage
         EXPERIMENT = "workflows/kill-card-pod.yml"
 
         KUBECTL = "$HOME/bin/kubectl"
-        KUBECONFIG = "/root/.kube/config"   // Adjust if your Jenkins agent has a different kubeconfig path
     }
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/Rubanrk004/litmus-chaos-gitops.git'
@@ -53,28 +50,34 @@ pipeline {
 
         stage('Apply Chaos Experiment') {
             steps {
-                sh '''
-                    echo "⚡ Applying chaos experiment..."
-                    $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
-                '''
+                // 🔑 Use Jenkins kubeconfig credential here
+                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                    sh '''
+                        echo "⚡ Applying chaos experiment..."
+                        $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
+                    '''
+                }
             }
         }
 
         stage('Verify Chaos Result') {
             steps {
-                script {
-                    echo "⏳ Waiting for chaos result..."
-                    sleep(time: 30, unit: "SECONDS")
+                // 🔑 Again use kubeconfig credential so kubectl works
+                withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
+                    script {
+                        echo "⏳ Waiting for chaos result..."
+                        sleep(time: 30, unit: "SECONDS")
 
-                    def result = sh(
-                        script: "$HOME/bin/kubectl get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
-                        returnStdout: true
-                    ).trim()
+                        def result = sh(
+                            script: "$HOME/bin/kubectl get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
+                            returnStdout: true
+                        ).trim()
 
-                    echo "📝 Chaos Experiment Verdict: ${result}"
+                        echo "📝 Chaos Experiment Verdict: ${result}"
 
-                    if (result != "Pass") {
-                        error("❌ Chaos Experiment Failed with Verdict: ${result}")
+                        if (result != "Pass") {
+                            error("❌ Chaos Experiment Failed with Verdict: ${result}")
+                        }
                     }
                 }
             }
