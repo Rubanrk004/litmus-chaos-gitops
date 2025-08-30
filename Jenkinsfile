@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        # Namespace where Litmus is installed
+        // Namespace where Litmus is installed
         LITMUS_NAMESPACE = "litmus"
 
-        # Namespace where your application is deployed
+        // Namespace where your application is deployed
         APP_NAMESPACE = "microservices"
 
-        # Path to the chaos experiment YAML inside repo
-        # 🔹 Update this after running the Debug Repo Structure stage
+        // Path to the chaos experiment YAML inside repo
+        //🔹 Update this after running the Debug Repo Structure stage
         EXPERIMENT = "workflows/kill-card-pod.yml"
 
         KUBECTL = "$HOME/bin/kubectl"
