@@ -2,13 +2,12 @@ pipeline {
     agent any
 
     environment {
-        PATH = "$HOME/bin:$PATH"          // Ensure kubectl is in PATH
-        KUBECTL = "kubectl"               // Use directly
-        NAMESPACE = "litmus"
-        EXPERIMENT = "kill-card-pod.yaml"
+        NAMESPACE = "litmus"                 // Litmus namespace
+        EXPERIMENT = "workflows/kill-card-pod.yml" // Correct file path
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/Rubanrk004/litmus-chaos-gitops.git'
@@ -25,6 +24,7 @@ pipeline {
                     chmod +x kubectl
                     mkdir -p $HOME/bin
                     mv kubectl $HOME/bin/
+                    export PATH=$HOME/bin:$PATH
                     kubectl version --client
                 '''
             }
@@ -33,8 +33,8 @@ pipeline {
         stage('Apply Chaos Experiment') {
             steps {
                 sh '''
-                    echo "Applying chaos experiment..."
-                    kubectl apply -f ${EXPERIMENT} -n ${NAMESPACE}
+                echo "Applying chaos experiment..."
+                kubectl apply -f ${EXPERIMENT} -n ${NAMESPACE}
                 '''
             }
         }
