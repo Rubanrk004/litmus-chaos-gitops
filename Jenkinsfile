@@ -20,8 +20,9 @@ stage('Install kubectl') {
     steps {
         sh '''
             echo "Downloading kubectl..."
-            KUBE_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
-            curl -LO "https://dl.k8s.io/release/${KUBE_VERSION}/bin/linux/amd64/kubectl"
+            KUBE_VERSION=$(curl -Ls https://dl.k8s.io/release/stable.txt)
+            echo "Latest kubectl version: $KUBE_VERSION"
+            curl -LO "https://dl.k8s.io/${KUBE_VERSION}/bin/linux/amd64/kubectl"
             chmod +x kubectl
             mv kubectl /usr/local/bin/
             kubectl version --client
