@@ -24,7 +24,9 @@ stage('Install kubectl') {
             echo "Latest kubectl version: $KUBE_VERSION"
             curl -LO "https://dl.k8s.io/${KUBE_VERSION}/bin/linux/amd64/kubectl"
             chmod +x kubectl
-            mv kubectl /usr/local/bin/
+            mkdir -p $HOME/bin
+            mv kubectl $HOME/bin/
+            export PATH=$HOME/bin:$PATH
             kubectl version --client
         '''
     }
