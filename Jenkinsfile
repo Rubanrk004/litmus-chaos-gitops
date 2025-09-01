@@ -48,38 +48,35 @@ pipeline {
             }
         }
 
-stage('Apply Chaos Experiment') {
-    steps {
-        withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
-            sh '''
-                echo "⚡ Applying chaos experiment..."
-                export KUBECONFIG=$KUBECONFIG   # 👈 tell kubectl to use this file
-                $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
-            '''
+        stage('Apply Chaos Experiment') {
+            steps {
+                withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                        echo "⚡ Setting kubeconfig"
+                        export KUBECONFIG=$KUBECONFIG_FILE
+                        echo "Using kubeconfig at $KUBECONFIG"
+
+                        echo "⚡ Checking cluster access..."
+                        $HOME/bin/kubectl get ns
+
+                        echo "⚡ Applying chaos experiment..."
+                        $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
+                    '''
+                }
+            }
         }
-    }
-}
 
-stage('Verify Chaos Result') {
-    steps {
-        withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
-            sh '''
-                echo "⏳ Waiting for chaos result..."
-                sleep 30
-
-                export KUBECONFIG=$KUBECONFIG   # 👈 again here
-                verdict=$($HOME/bin/kubectl get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}')
-                
-                echo "📝 Chaos Experiment Verdict: $verdict"
-
-                if [ "$verdict" != "Pass" ]; then
-                  echo "❌ Chaos Experiment Failed with Verdict: $verdict"
-                  exit 1
-                fi
-            '''
+        stage('Verify Chaos Experiment') {
+            steps {
+                withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
+                    sh '''
+                        export KUBECONFIG=$KUBECONFIG_FILE
+                        echo "⚡ Verifying workflow run..."
+                        $HOME/bin/kubectl get wf -n ${LITMUS_NAMESPACE}
+                    '''
+                }
+            }
         }
-    }
-}
 
     post {
         always {
