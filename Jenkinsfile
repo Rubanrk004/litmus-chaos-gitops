@@ -51,7 +51,7 @@ pipeline {
         stage('Apply Chaos Experiment') {
             steps {
                 // 🔑 Use Jenkins kubeconfig credential here
-                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
                     sh '''
                         echo "⚡ Applying chaos experiment..."
                         $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
