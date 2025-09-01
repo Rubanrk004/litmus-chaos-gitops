@@ -50,11 +50,10 @@ pipeline {
 
         stage('Apply Chaos Experiment') {
             steps {
-                // 🔑 Use Jenkins kubeconfig credential here
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
                     sh '''
                         echo "⚡ Applying chaos experiment..."
-                        $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
+                        $HOME/bin/kubectl --kubeconfig=$KUBECONFIG apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
                     '''
                 }
             }
@@ -62,14 +61,13 @@ pipeline {
 
         stage('Verify Chaos Result') {
             steps {
-                // 🔑 Again use kubeconfig credential so kubectl works
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG')]) {
                     script {
                         echo "⏳ Waiting for chaos result..."
                         sleep(time: 30, unit: "SECONDS")
 
                         def result = sh(
-                            script: "$HOME/bin/kubectl get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
+                            script: "$HOME/bin/kubectl --kubeconfig=$KUBECONFIG get chaosresult -n ${APP_NAMESPACE} -o jsonpath='{.items[0].status.experimentStatus.verdict}'",
                             returnStdout: true
                         ).trim()
 
