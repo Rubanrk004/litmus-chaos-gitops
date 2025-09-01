@@ -25,6 +25,7 @@ pipeline {
             steps {
                 sh '''
                     echo "📂 Checking repo file structure..."
+                    pwd
                     ls -R
                 '''
             }
@@ -52,9 +53,9 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        echo "⚡ Setting kubeconfig"
+                        echo "⚡ Setting kubeconfig..."
                         export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "Using kubeconfig at $KUBECONFIG"
+                        echo "Using kubeconfig: $KUBECONFIG"
 
                         echo "⚡ Checking cluster access..."
                         $HOME/bin/kubectl get ns
@@ -70,13 +71,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
+                        echo "⚡ Verifying chaos workflow run..."
                         export KUBECONFIG=$KUBECONFIG_FILE
-                        echo "⚡ Verifying workflow run..."
                         $HOME/bin/kubectl get wf -n ${LITMUS_NAMESPACE}
                     '''
                 }
             }
         }
+    }
 
     post {
         always {
@@ -89,5 +91,4 @@ pipeline {
             echo "❌ Chaos Experiment FAILED"
         }
     }
-}
 }
