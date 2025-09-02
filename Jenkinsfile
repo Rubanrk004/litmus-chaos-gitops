@@ -51,7 +51,7 @@ pipeline {
 
         stage('Apply Chaos Experiment') {
             steps {
-                withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
+                withCredentials([file(credentialsId: 'app-cluster-kubeconfig', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
                         echo "⚡ Setting kubeconfig..."
                         export KUBECONFIG=$KUBECONFIG_FILE
