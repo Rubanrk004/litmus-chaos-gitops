@@ -9,7 +9,7 @@ pipeline {
         APP_NAMESPACE = "microservices"
 
         // Path to the chaos experiment YAML inside repo
-        EXPERIMENT = "litmus/9cd336f5-a916-4d9b-a352-5a865e6f6b88/network-latency.yaml"
+        EXPERIMENT = "litmus/9cd336f5-a916-4d9b-a352-5a865e6f6b88/network-latency-1.yaml"
 
         KUBECTL = "$HOME/bin/kubectl"
     }
