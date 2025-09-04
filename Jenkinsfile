@@ -24,7 +24,7 @@ pipeline {
         stage('Debug Repo Structure') {
             steps {
                 sh '''
-                    echo "📂 Checking repo file structure..."
+                    echo "Checking repo file structure..."
                     pwd
                     ls -R
                 '''
@@ -43,7 +43,7 @@ pipeline {
                     mkdir -p $HOME/bin
                     mv kubectl $HOME/bin/
 
-                    echo "✅ Verifying kubectl..."
+                    echo "Verifying kubectl..."
                     $HOME/bin/kubectl version --client
                 '''
             }
@@ -53,14 +53,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        echo "⚡ Setting kubeconfig..."
+                        echo "Setting kubeconfig..."
                         export KUBECONFIG=$KUBECONFIG_FILE
                         echo "Using kubeconfig: $KUBECONFIG"
 
-                        echo "⚡ Checking cluster access..."
+                        echo "Checking cluster access..."
                         $HOME/bin/kubectl get ns
 
-                        echo "⚡ Applying chaos experiment..."
+                        echo "Applying chaos experiment..."
                         $HOME/bin/kubectl apply -f ${EXPERIMENT} -n ${LITMUS_NAMESPACE}
                     '''
                 }
@@ -71,7 +71,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: '4e02ff17-2dd3-4f42-bc24-9ee574aad262', variable: 'KUBECONFIG_FILE')]) {
                     sh '''
-                        echo "⚡ Verifying chaos workflow run..."
+                        echo "Verifying chaos workflow run..."
                         export KUBECONFIG=$KUBECONFIG_FILE
                         $HOME/bin/kubectl get wf -n ${LITMUS_NAMESPACE}
                     '''
@@ -82,13 +82,13 @@ pipeline {
 
     post {
         always {
-            echo "📌 Pipeline completed."
+            echo "Pipeline completed."
         }
         success {
-            echo "✅ Chaos Experiment PASSED"
+            echo "Chaos Experiment PASSED"
         }
         failure {
-            echo "❌ Chaos Experiment FAILED"
+            echo "Chaos Experiment FAILED"
         }
     }
 }
